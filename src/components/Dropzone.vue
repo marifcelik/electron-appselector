@@ -3,12 +3,12 @@
 async function handleDrop(e) {
   const files = e.dataTransfer.files;
 
-  for (const file of files) {
-    window.api.uploadFile(file.path);
-  }
+  const paths = [...files].map((file) => (({ path }) => path)(file))
+
+  window.api.uploadFiles(paths);
 }
 
-const selectFile = window.api.selectFile;
+const selectFile = window.api.dropFiles;
 </script>
 
 <template>
