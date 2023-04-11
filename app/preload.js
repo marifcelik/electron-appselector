@@ -1,8 +1,8 @@
-const { contextBridge, ipcRenderer } = require("electron");
 const { readFileSync } = require('fs');
 const { exec } = require('child_process');
-const ini = require('ini');
+const { contextBridge, ipcRenderer } = require("electron");
 const findIcon = require('freedesktop-icons');
+const ini = require('ini');
 
 let fileHandler;
 
@@ -12,18 +12,14 @@ switch (process.platform) {
     /** @param {string} path */
     fileHandler = async (path) => {
       const file = ini.parse(readFileSync(path, 'utf-8'))['Desktop Entry'];
-      // const name = file.Name;
-      // const icon = file.Icon;
-      // const comment = file.Comment;
 
       const iconPath = await findIcon({ name: file.Icon, type: 'scalable' });
       console.log(iconPath);
 
-      console.log(file)
-      exec(file.Exec, (err, stdout, stderr) => {
-        if (err)
-          console.error(err);
-      })
+      // exec(file.Exec, (err, stdout, stderr) => {
+      //   if (err)
+      //     console.error(err);
+      // })
     }
     break;
   case 'win32':
