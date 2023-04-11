@@ -1,50 +1,59 @@
 const { contextBridge, ipcRenderer } = require("electron");
-const { readFileSync } = require('fs');
+const { readFileSync, writeFileSync } = require('fs');
 const { exec } = require('child_process');
 const ini = require('ini');
-const findIcon = require('freedesktop-icons');
 
-let fileHandler;
+let uploadHandler;
 
 switch (process.platform) {
   case 'linux':
-  case 'freebsd':
-    /** @param {string} path */
-    fileHandler = async (path) => {
-      const file = ini.parse(readFileSync(path, 'utf-8'))['Desktop Entry'];
-      // const name = file.Name;
-      // const icon = file.Icon;
-      // const comment = file.Comment;
+    const findIcon = require('freedesktop-icons');
 
-      const iconPath = await findIcon({ name: file.Icon, type: 'scalable' });
-      console.log(iconPath);
+    /** @param {string[]} paths */
+    uploadHandler = async (paths) => {
+      const iconNames = paths.map((path) =>
+        (({ Icon }) => Icon)(ini.parse(readFileSync(path, 'utf-8'))['Desktop Entry'])
+      )
 
-      console.log(file)
-      exec(file.Exec, (err, stdout, stderr) => {
-        if (err)
-          console.error(err);
-      })
+      console.log(iconNames);
+      // TODO: find multiple icons
+      // const iconPath = await findIcon({ name: file.Icon, type: 'scalable' });
+
+      // console.log(file)
+      // exec(file.Exec, (err, stdout, stderr) => {
+      //   if (err)
+      //     console.error(err);
+      // })
     }
     break;
+
   case 'win32':
-    /** @param {string} path */
-    fileHandler = async (path) => {
-      // TODO:
-      throw new Error('TODO');
+    const { sync: lnkParse } = require('get-windows-shortcut-properties')
+    const { getIcon, emitter: iconEmitter } = require('icon-extractor')
+
+    /** @param {string[]} paths */
+    uploadHandler = async (paths) => {
+      console.log(paths);
+
+      iconEmitter.on('icon', ({ Context, Path, Base64ImageData }) => {
+        console.log(Path)
+        writeFileSync('deneme.jpg', Base64ImageData, { encoding: 'base64' })
+      })  
+
+      paths.forEach(path => getIcon('icon', path))
+
     }
     break;
+
   default:
     throw new Error('Not Implemented');
 }
 
 const API = {
-  uploadFile: fileHandler,
-  async selectFile() {
+  uploadFiles: uploadHandler,
+  async dropFiles() {
     const files = await ipcRenderer.invoke('modal');
-
-    for (const file of files) {
-      fileHandler(file);
-    }
+    uploadHandler(files);
   }
 }
 

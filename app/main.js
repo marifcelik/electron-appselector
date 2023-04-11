@@ -24,20 +24,22 @@ app.whenReady().then(() => {
     window.show()
     window.webContents.openDevTools()
   })
-})
+});
 
-app.on('window-all-closed', app.quit)
+app.on('window-all-closed', app.quit);
 
 ipcMain.handle('modal', async () => {
+  const filters = process.platform === 'linux' || process.platform === 'freebsd'
+    ? [{ name: 'destkop files', extensions: ['desktop'] }]
+    : [
+      { name: 'exe files', extensions: ['exe'] },
+      { name: 'lnk files', extensions: ['lnk'] }
+    ]
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'uygulama ya da kısayol seç',
     properties: ['multiSelections', 'openFile'],
-    filters: [
-      { name: 'destkop files', extensions: ['desktop'] }
-    ]
+    filters
   })
-
-  console.log(filePaths)
 
   return canceled ? null : filePaths
 })
