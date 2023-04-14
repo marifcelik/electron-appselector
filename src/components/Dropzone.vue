@@ -3,7 +3,7 @@
 async function handleDrop(e) {
   const files = e.dataTransfer.files;
 
-  const paths = [...files].map((file) => (({ path }) => path)(file))
+  const paths = [...files].map((file) => file.path)
 
   window.api.uploadFiles(paths);
 }
@@ -12,7 +12,7 @@ const selectFile = window.api.dropFiles;
 </script>
 
 <template>
-    <div 
+  <div 
     id="dropzone"
     @click="selectFile()"
     @dragover.stop.prevent=""
@@ -24,8 +24,9 @@ const selectFile = window.api.dropFiles;
 
 <style scoped>
 #dropzone {
-  width: 37rem;
-  height: 16rem;
+  width: 90%;
+  height: 90%;
+  margin: 0 auto;
   padding: 1.5rem;
   border: 2px dashed #d1d5db;
   cursor: pointer;
