@@ -1,7 +1,8 @@
-const { contextBridge, ipcRenderer } = require("electron");
 const { readFileSync, writeFileSync } = require('fs');
 const { exec } = require('child_process');
+const { contextBridge, ipcRenderer } = require("electron");
 const ini = require('ini');
+const db = require('./db');
 
 let uploadHandler;
 
@@ -11,13 +12,16 @@ switch (process.platform) {
 
     /** @param {string[]} paths */
     uploadHandler = async (paths) => {
-      const iconNames = paths.map((path) =>
-        (({ Icon }) => Icon)(ini.parse(readFileSync(path, 'utf-8'))['Desktop Entry'])
-      )
+      const iconNames = paths.map((path) => ({
+        name: ini.parse(readFileSync(path, 'utf-8'))['Desktop Entry'].Icon,
+        type: 'scalable'
+      }))
 
       console.log(iconNames);
       // TODO: find multiple icons
       // const iconPath = await findIcon({ name: file.Icon, type: 'scalable' });
+      const iconPaths = await findIcon(iconNames)
+      console.log(iconPaths);
 
       // console.log(file)
       // exec(file.Exec, (err, stdout, stderr) => {
@@ -38,7 +42,7 @@ switch (process.platform) {
       iconEmitter.on('icon', ({ Context, Path, Base64ImageData }) => {
         console.log(Path)
         writeFileSync('deneme.jpg', Base64ImageData, { encoding: 'base64' })
-      })  
+      })
 
       paths.forEach(path => getIcon('icon', path))
 
@@ -50,11 +54,39 @@ switch (process.platform) {
 }
 
 const API = {
+  getApps: () => {
+    try {
+      return db.prepare(`SELECT * FROM apps`).all()
+    } catch (err) {
+      return { error: true, details: err.toString() }
+    }
+  },
+  createApp: (name, icon, details = null, command) => {
+    try {
+      const query = db.prepare(`INSERT INTO apps (name, icon, details, command) VALUES (?, ?, ?, ?)`);
+      return query.run(name, icon, details, command)
+    } catch (err) {
+      return { error: true, details: err.toString() }
+    }
+  },
+  updateApp: (id, name, icon, details, command) => {
+    try {
+      const query = db.prepare(`UPDATE apps name = ?, icon = ?, details = ?, command = ? WHERE id = ?`);
+      return query.run(name, icon, details, command, id)
+    } catch (err) {
+      return { error: true, details: err.toString() }
+    }
+  },
+  deleteApp: (id) => {
+    try {
+      const query = db.prepare(`DELETE FROM apps WHERE id = ?`);
+      return query.run(id)
+    } catch (err) {
+      return { error: true, details: err.toString() }
+    }
+  },
   uploadFiles: uploadHandler,
-  async dropFiles() {
-    const files = await ipcRenderer.invoke('modal');
-    uploadHandler(files);
-  }
+  dropFiles: async () => uploadHandler(await ipcRenderer.invoke('modal'))
 }
 
 contextBridge.exposeInMainWorld('api', API);

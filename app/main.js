@@ -1,5 +1,5 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const { join } = require('path')
+const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 
 app.whenReady().then(() => {
   const window = new BrowserWindow({
