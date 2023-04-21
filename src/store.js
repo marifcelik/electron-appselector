@@ -1,14 +1,9 @@
 import { reactive } from 'vue'
 
 const store = reactive({
-  modal: {
-    show: false,
-    message: ''
-  },
-  showModal(msg) {
-    this.modal.message = msg
-    this.modal.show  =true
-  }
+  appId: undefined,
+  files: [],
+  modal: false
 })
 
 export default store

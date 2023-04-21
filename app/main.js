@@ -1,5 +1,5 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const { join } = require('path')
+const { app, BrowserWindow, dialog, ipcMain } = require('electron')
 
 app.whenReady().then(() => {
   const window = new BrowserWindow({
@@ -10,7 +10,8 @@ app.whenReady().then(() => {
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       sandbox: false,
-      nodeIntegration: true
+      nodeIntegration: true,
+      webSecurity: false
     }
   })
 
@@ -39,5 +40,5 @@ ipcMain.handle('modal', async () => {
     filters
   })
 
-  return canceled ? null : filePaths
+  return canceled ? null : filePaths.map(value => ({ name: value.slice(value.lastIndexOf('/') + 1), path: value }))
 })

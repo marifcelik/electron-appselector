@@ -6,15 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "rebuildsql": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
+    "better-sqlite3": "^8.3.0",
     "freedesktop-icons": "^1.0.0",
     "icon-extractor": "^1.0.3",
     "ini": "^4.0.0",
     "vue": "^3.2.47"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.2.10",
     "@vitejs/plugin-vue": "^4.1.0",
     "electron": "^23.2.1",
     "vite": "^4.2.0",
