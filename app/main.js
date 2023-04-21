@@ -1,5 +1,5 @@
 const { join } = require('path')
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain } = require('electron')
 
 app.whenReady().then(() => {
   const window = new BrowserWindow({
@@ -10,7 +10,8 @@ app.whenReady().then(() => {
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       sandbox: false,
-      nodeIntegration: true
+      nodeIntegration: true,
+      webSecurity: false
     }
   })
 
@@ -29,17 +30,15 @@ app.whenReady().then(() => {
 app.on('window-all-closed', app.quit);
 
 ipcMain.handle('modal', async () => {
-  const filters = process.platform === 'linux' || process.platform === 'freebsd'
+  const filters = process.platform === 'linux'
     ? [{ name: 'destkop files', extensions: ['desktop'] }]
-    : [
-      { name: 'exe files', extensions: ['exe'] },
-      { name: 'lnk files', extensions: ['lnk'] }
-    ]
+    : [{ name: 'exe files', extensions: ['exe'] }, { name: 'lnk files', extensions: ['lnk'] }]
+
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'uygulama ya da kısayol seç',
     properties: ['multiSelections', 'openFile'],
     filters
   })
 
-  return canceled ? null : filePaths
+  return canceled ? null : filePaths.map(value => ({ name: value.slice(value.lastIndexOf('/') + 1), path: value }))
 })

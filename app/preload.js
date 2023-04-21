@@ -1,34 +1,41 @@
-const { readFileSync, writeFileSync } = require('fs');
+const { readFileSync, writeFileSync, copyFileSync } = require('fs');
+const { join: joinPath } = require('path');
 const { exec } = require('child_process');
 const { contextBridge, ipcRenderer } = require("electron");
-const ini = require('ini');
 const db = require('./db');
 
 let uploadHandler;
 
 switch (process.platform) {
   case 'linux':
+    const ini = require('ini');
     const findIcon = require('freedesktop-icons');
 
     /** @param {string[]} paths */
-    uploadHandler = async (paths) => {
-      const iconNames = paths.map((path) => ({
-        name: ini.parse(readFileSync(path, 'utf-8'))['Desktop Entry'].Icon,
-        type: 'scalable'
-      }))
+    uploadHandler = (paths) => paths.map(async (path) => {
+      const parsedFile = ini.parse(readFileSync(path, 'utf-8'))['Desktop Entry'];
+      let iconPath = await findIcon({ name: parsedFile.Icon, type: 'scalable' })
 
-      console.log(iconNames);
-      // TODO: find multiple icons
-      // const iconPath = await findIcon({ name: file.Icon, type: 'scalable' });
-      const iconPaths = await findIcon(iconNames)
-      console.log(iconPaths);
+      console.log(__dirname);
+      console.log(parsedFile);
+      console.log(iconPath);
 
-      // console.log(file)
-      // exec(file.Exec, (err, stdout, stderr) => {
-      //   if (err)
-      //     console.error(err);
-      // })
-    }
+      if (iconPath) {
+        const localPath = joinPath(__dirname, '/icons', iconPath.slice(iconPath.lastIndexOf('/') + 1));
+        copyFileSync(iconPath, localPath);
+        iconPath = localPath;
+      }
+
+      db.createApp({
+        name: parsedFile.Name,
+        icon: iconPath,
+        details: parsedFile.Comment || null,
+        command: parsedFile.Exec
+      })
+    })
+
+    // const iconPath = await findIcon({ name: file.Icon, type: 'scalable' });
+    // const iconPaths = await findIcon(iconNames, undefined, undefined, '/home/arif/deneme')
     break;
 
   case 'win32':
@@ -45,48 +52,21 @@ switch (process.platform) {
       })
 
       paths.forEach(path => getIcon('icon', path))
-
     }
     break;
 
   default:
-    throw new Error('Not Implemented');
+    throw new Error('This os not supported.');
 }
 
 const API = {
-  getApps: () => {
-    try {
-      return db.prepare(`SELECT * FROM apps`).all()
-    } catch (err) {
-      return { error: true, details: err.toString() }
-    }
-  },
-  createApp: (name, icon, details = null, command) => {
-    try {
-      const query = db.prepare(`INSERT INTO apps (name, icon, details, command) VALUES (?, ?, ?, ?)`);
-      return query.run(name, icon, details, command)
-    } catch (err) {
-      return { error: true, details: err.toString() }
-    }
-  },
-  updateApp: (id, name, icon, details, command) => {
-    try {
-      const query = db.prepare(`UPDATE apps name = ?, icon = ?, details = ?, command = ? WHERE id = ?`);
-      return query.run(name, icon, details, command, id)
-    } catch (err) {
-      return { error: true, details: err.toString() }
-    }
-  },
-  deleteApp: (id) => {
-    try {
-      const query = db.prepare(`DELETE FROM apps WHERE id = ?`);
-      return query.run(id)
-    } catch (err) {
-      return { error: true, details: err.toString() }
-    }
-  },
+  // REVIEW: Not worked like this. idk why. look about later
+  // getApps: db.getApps,
+  getApps: () => db.getApps(),
+  getAppById: (id) => db.getAppById(id),
+  selectFiles: async () => await ipcRenderer.invoke('modal'),
   uploadFiles: uploadHandler,
-  dropFiles: async () => uploadHandler(await ipcRenderer.invoke('modal'))
+  runApp: command => exec(command)
 }
 
 contextBridge.exposeInMainWorld('api', API);
