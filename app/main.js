@@ -29,12 +29,10 @@ app.whenReady().then(() => {
 app.on('window-all-closed', app.quit);
 
 ipcMain.handle('modal', async () => {
-  const filters = process.platform === 'linux' || process.platform === 'freebsd'
+  const filters = process.platform === 'linux'
     ? [{ name: 'destkop files', extensions: ['desktop'] }]
-    : [
-      { name: 'exe files', extensions: ['exe'] },
-      { name: 'lnk files', extensions: ['lnk'] }
-    ]
+    : [{ name: 'exe files', extensions: ['exe'] }, { name: 'lnk files', extensions: ['lnk'] }]
+    
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: 'uygulama ya da kısayol seç',
     properties: ['multiSelections', 'openFile'],

@@ -28,19 +28,21 @@ switch (process.platform) {
     break;
 
   case 'win32':
-    const { sync: lnkParse } = require('get-windows-shortcut-properties')
     const { getIcon, emitter: iconEmitter } = require('icon-extractor')
 
     /** @param {string[]} paths */
     uploadHandler = async (paths) => {
       console.log(paths);
 
-      iconEmitter.on('icon', ({ Context, Path, Base64ImageData }) => {
-        console.log(Path)
+      iconEmitter.on('icon', ({ Base64ImageData }) => {
         writeFileSync('deneme.jpg', Base64ImageData, { encoding: 'base64' })
-      })  
+      })
 
-      paths.forEach(path => getIcon('icon', path))
+      paths.forEach(path => {
+        // app name
+        // console.log(path.substring(path.lastIndexOf('\\') + 1, path.lastIndexOf('.')));
+        getIcon('icon', path)
+      })
 
     }
     break;
@@ -53,7 +55,8 @@ const API = {
   uploadFiles: uploadHandler,
   async dropFiles() {
     const files = await ipcRenderer.invoke('modal');
-    uploadHandler(files);
+    if (files)
+      uploadHandler(files);
   }
 }
 

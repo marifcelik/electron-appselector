@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "freedesktop-icons": "^1.0.0",
-    "get-windows-shortcut-properties": "^1.1.0",
     "icon-extractor": "^1.0.3",
     "ini": "^4.0.0",
     "vue": "^3.2.47"
