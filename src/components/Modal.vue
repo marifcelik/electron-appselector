@@ -1,43 +1,35 @@
 <script setup>
-const props = defineProps({
-  show: Boolean,
-  element: Object,
-  type: String,
-  id: Number
-})
+import { onUnmounted } from 'vue';
+import store from '../store';
+import Dropzone from './Dropzone.vue';
 
-console.log(props);
-
-defineEmits(['close'])
-
-function deneme() {
-  console.log('esc ye basıldı')
+function uploadApps() {
+  /* REVIEW: i used like this because component.value.files object was coming as proxy
+  and unref() method was not working  */
+  const files = JSON.parse(JSON.stringify(store.files))
+  window.api.uploadFiles(files.map(v => v.path))
 }
+
+onUnmounted(() => store.files = [])
 </script>
 
 <template>
   <Transition name="modal">
-    <div v-if="show" id="modal-mask" @click="$emit('close')">
+    <div v-if="store.modal" id="modal-mask" @click="store.modal = false">
       <div id="modal-container" @click.stop="">
         <div id="modal-body">
-          <component :is="element" />
+          <Dropzone />
         </div>
         <div id="modal-footer">
-          <template v-if="type === 'dropzone'">
-            <button @click="$emit('close')">İptal</button>
-            <button @click="$emit('close')">Kaydet</button>
-          </template>
-          <template v-else>
-            <button @click="$emit('close')">Kapat</button>
-            <button @click="$emit('close')">Çalıştır</button>
-          </template>
+          <button @click="store.modal = false">İptal</button>
+          <button @click="uploadApps">Kaydet</button>
         </div>
       </div>
     </div>
   </Transition>
 </template>
 
-<style scoped>
+<style>
 #modal-mask {
   position: fixed;
   z-index: 10;
@@ -76,7 +68,7 @@ function deneme() {
 }
 
 button {
-  margin-right: 10px;
+  margin-left: 10px;
 }
 
 .modal-enter-from {
