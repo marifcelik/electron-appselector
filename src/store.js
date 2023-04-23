@@ -1,9 +1,10 @@
 import { reactive } from 'vue'
 
 const store = reactive({
-  appId: undefined,
+  apps: window.api.getApps(),
+  selectedApp: null,
   files: [],
-  modal: false
+  modal: false,
 })
 
 export default store
