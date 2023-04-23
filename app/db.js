@@ -1,35 +1,28 @@
+const { ipcRenderer } = require('electron');
 const DataBase = require('better-sqlite3');
-const { homedir } = require('os')
-const fs = require('fs')
 
 class DBService {
   constructor() {
-    const path = homedir() + (process.platform === 'linux' ? '/.local/myapp' : '\\%APPDATA\\myapp');
+    ipcRenderer.invoke('datadir').then(path => {
+      this.db = new DataBase(`${path}/db.db`, { verbose: console.log });
 
-    if (!fs.existsSync(path)) {
-      fs.mkdirSync(path)
-    }
-
-    this.db = new DataBase(`${path}/db.db`, { verbose: console.log });
-    console.log(this.db);
-
-    this.db.exec(/*sql*/`
-      CREATE TABLE IF NOT EXISTS apps (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        icon TEXT,
-        details TEXT,
-        command TEXT NOT NULL
-      )`
-    )
+      this.db.exec(/*sql*/`
+        CREATE TABLE IF NOT EXISTS apps (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          icon TEXT,
+          details TEXT,
+          command TEXT NOT NULL
+        )`
+      )
+    })
   }
 
   getApps() {
     try {
       const smt = this.db.prepare(`SELECT id, name, icon FROM apps`)
-      return smt.all()
+      return smt.all();
     } catch (err) {
-      console.log(err);
       return { error: true, details: err.toString() }
     }
   }

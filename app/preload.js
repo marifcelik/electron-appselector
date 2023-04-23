@@ -1,4 +1,4 @@
-const { readFileSync, writeFileSync, copyFileSync } = require('fs');
+const fs = require('fs');
 const { join: joinPath } = require('path');
 const { exec } = require('child_process');
 const { contextBridge, ipcRenderer } = require("electron");
@@ -12,17 +12,18 @@ switch (process.platform) {
     const findIcon = require('freedesktop-icons');
 
     /** @param {string[]} paths */
-    uploadHandler = (paths) => paths.map(async (path) => {
-      const parsedFile = ini.parse(readFileSync(path, 'utf-8'))['Desktop Entry'];
-      let iconPath = await findIcon({ name: parsedFile.Icon, type: 'scalable' })
+    uploadHandler = paths => paths.map(async path => {
+      const parsedFile = ini.parse(fs.readFileSync(path, 'utf-8'))['Desktop Entry'];
+      let iconPath = await findIcon({ name: parsedFile.Icon, size: 256 }, 'Tela-circle-blue-dark')
 
       console.log(__dirname);
       console.log(parsedFile);
       console.log(iconPath);
 
       if (iconPath) {
-        const localPath = joinPath(__dirname, '/icons', iconPath.slice(iconPath.lastIndexOf('/') + 1));
-        copyFileSync(iconPath, localPath);
+        const datadir = await ipcRenderer.invoke('datadir');
+        const localPath = joinPath(datadir, 'icons', iconPath.slice(iconPath.lastIndexOf('/') + 1));
+        fs.copyFileSync(iconPath, localPath);
         iconPath = localPath;
       }
 
@@ -46,7 +47,7 @@ switch (process.platform) {
       console.log(paths);
 
       iconEmitter.on('icon', ({ Base64ImageData }) => {
-        writeFileSync('deneme.jpg', Base64ImageData, { encoding: 'base64' })
+        fs.writeFileSync('deneme.jpg', Base64ImageData, { encoding: 'base64' })
       })
 
       paths.forEach(path => getIcon('icon', path))
@@ -61,10 +62,10 @@ const API = {
   // REVIEW: Not worked like this. idk why. look about later
   // getApps: db.getApps,
   getApps: () => db.getApps(),
-  getAppById: (id) => db.getAppById(id),
+  getAppById: id => db.getAppById(id),
   selectFiles: async () => await ipcRenderer.invoke('modal'),
   uploadFiles: uploadHandler,
-  async dropFiles() {
+  dropFiles: async () => {
     const files = await ipcRenderer.invoke('modal');
     if (files)
       uploadHandler(files);
