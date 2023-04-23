@@ -17,7 +17,9 @@ async function handleDrop(e) {
 }
 
 async function handleSelect() {
-  files.push(...pathFilter(await window.api.selectFiles()))
+  const selectedFiles = await window.api.selectFiles();
+  if (selectedFiles)
+    files.push(...pathFilter(selectedFiles))
 }
 
 // clear array
@@ -32,16 +34,15 @@ watch([files], (value) => console.log(value))
       <p>
         {{ files.length ? files.length + ' dosya yüklendi' : 'Dosya yüklemek için tıklayın ya da sürükleyin.' }}
       </p>
+      <p id="files" v-if="files.length > 0">{{ files.map(v => v.name).join(' - ') }}</p>
     </div>
-    <br>
-    <p id="files">{{ files.map(v => v.name).join(' - ') }}</p>
   </div>
 </template>
 
 <style scoped>
 #drop-container {
-  width: 90%;
-  height: 70%;
+  width: 30rem;
+  height: 12rem;
   margin: 0 auto;
 }
 
@@ -53,14 +54,15 @@ watch([files], (value) => console.log(value))
   cursor: pointer;
   border-radius: 10px;
   background-color: #1a1a1a;
+  overflow: hidden;
 }
 
 #dropzone:hover {
   background-color: #333333;
 }
 
-p#files {
-  width: 100%;
+#files {
+  margin-top: 15px;
   text-align: left;
   font-size: 14px;
   color: gray;

@@ -3,14 +3,23 @@ import { onUnmounted } from 'vue';
 import store from '../store';
 import Dropzone from './Dropzone.vue';
 
+let timeOut;
+
 function uploadApps() {
   /* REVIEW: i used like this because component.value.files object was coming as proxy
   and unref() method was not working  */
-  const files = JSON.parse(JSON.stringify(store.files))
-  window.api.uploadFiles(files.map(v => v.path))
+  window.api.uploadFiles(store.files.map(v => v.path));
+  store.uploaded = 1;
+  timeOut = setTimeout(() => {
+    store.apps = window.api.getApps();
+    store.modal = false;
+  }, 100);
 }
 
-onUnmounted(() => store.files = [])
+onUnmounted(() => {
+  store.files = [];
+  clearInterval(timeOut)
+})
 </script>
 
 <template>
@@ -21,8 +30,10 @@ onUnmounted(() => store.files = [])
           <Dropzone />
         </div>
         <div id="modal-footer">
-          <button @click="store.modal = false">İptal</button>
-          <button @click="uploadApps">Kaydet</button>
+          <div>
+            <button @click="store.modal = false">İptal</button>
+            <button @click="uploadApps">Kaydet</button>
+          </div>
         </div>
       </div>
     </div>
@@ -43,28 +54,26 @@ onUnmounted(() => store.files = [])
 }
 
 #modal-container {
-  width: 45rem;
-  height: 25rem;
+  width: min-content;
+  height: min-content;
   margin: auto;
-  padding: 30px 20px;
+  padding: 2rem 0;
   background-color: #1e1f22;
   border-radius: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);
   transition: all 0.3s ease;
+  text-align: center;
 }
 
 #modal-body {
-  width: 90%;
-  height: 90%;
-  margin: 0 auto;
-  text-align: center;
+  margin: 0 2rem 2rem;
 }
 
 #modal-footer {
   display: flex;
-  width: 25%;
-  margin-left: auto;
-  margin-right: 3rem;
+  width: 85%;
+  margin: 0 auto;
+  justify-content: end;
 }
 
 button {
